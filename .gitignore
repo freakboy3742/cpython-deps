@@ -1,0 +1,15 @@
+*.swo
+*.swp
+.envrc
+.vscode/
+build/*
+install/*
+dist/*
+downloads/*
+local/*
+venv/*
+.venv/*
+__pycache__
+*.log
+*.gz
+*.DS_Store

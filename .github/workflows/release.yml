@@ -1,0 +1,142 @@
+# Run this Action on creating a new tag matching "<library>-<version>-<build>"
+# e.g., foobar-1.2.3-1
+name: Create release
+on:
+  push:
+    tags:
+    - '*-*-*'
+
+# Cancel active CI runs for a PR before starting another run
+concurrency:
+  group: ${{ github.workflow}}-${{ github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    shell: bash
+
+env:
+  FORCE_COLOR: "1"
+
+jobs:
+  setup:
+    name: Setup
+    runs-on: ubuntu-latest
+    outputs:
+      PACKAGE_NAME: ${{ steps.build-vars.outputs.PACKAGE_NAME }}
+      PACKAGE_VERSION: ${{ steps.build-vars.outputs.PACKAGE_VERSION }}
+      BUILD_NUMBER: ${{ steps.build-vars.outputs.BUILD_NUMBER }}
+
+    steps:
+    - name: Set Build Variables
+      id: build-vars
+      env:
+        TAG_NAME: ${{ github.ref }}
+      run: |
+        export TAG=$(basename $TAG_NAME)
+        echo "TAG=${TAG}"
+        export PACKAGE_NAME_VERSION="${TAG%-*}"
+        export PACKAGE_NAME="${PACKAGE_NAME_VERSION%-*}"
+        export PACKAGE_VERSION="${PACKAGE_NAME_VERSION#*-}"
+        export BUILD_NUMBER="${TAG#*-*-}"
+
+        echo "PACKAGE_NAME=${PACKAGE_NAME}" | tee -a ${GITHUB_OUTPUT}
+        echo "PACKAGE_VERSION=${PACKAGE_VERSION}" | tee -a ${GITHUB_OUTPUT}
+        echo "BUILD_NUMBER=${BUILD_NUMBER}" | tee -a ${GITHUB_OUTPUT}
+
+    - name: Checkout
+      uses: actions/checkout@v4.1.7
+
+    - name: Set up Python
+      uses: actions/setup-python@v5.2.0
+      with:
+        python-version: "3.X"
+
+    - name: Build ${{ matrix.host }}
+      run: |
+        # Download sources by invoking the build without a host.
+        python -m build-dep ${{ steps.build-vars.outputs.PACKAGE_NAME }} --version ${{ steps.build-vars.outputs.PACKAGE_VERSION }}
+
+    - name: Preserve downloads folder
+      uses: actions/upload-artifact@v4.4.0
+      with:
+        name: downloads
+        path: downloads
+        if-no-files-found: error
+
+  build:
+    name: Build
+    needs: setup
+    runs-on: ${{ matrix.runs-on }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Android
+          - host: "arm-linux-androideabi"
+            runs-on: "ubuntu-latest"
+          - host: "aarch64-linux-android"
+            runs-on: "ubuntu-latest"
+          - host: "i686-linux-android"
+            runs-on: "ubuntu-latest"
+          - host: "x86_64-linux-android"
+            runs-on: "ubuntu-latest"
+
+          # iOS
+          - host: "arm64-apple-ios"
+            runs-on: "macos-latest"
+          - host: "arm64-apple-ios-simulator"
+            runs-on: "macos-latest"
+          - host: "x86_64-apple-ios-simulator"
+            runs-on: "macos-latest"
+
+          # macOS
+          - host: "universal2-apple-darwin"
+            runs-on: "macos-latest"
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4.1.7
+
+    - name: Set up Python
+      uses: actions/setup-python@v5.2.0
+      with:
+        python-version: "3.X"
+
+    - name: Restore downloads folder
+      uses: actions/download-artifact@v4.1.8
+      with:
+        name: downloads
+        path: downloads
+
+    - name: Build
+      run: |
+        # Do the build for the requested host.
+        python -m build-dep --host ${{ matrix.host }} ${{ needs.setup.outputs.PACKAGE_NAME }} --version ${{ needs.setup.outputs.PACKAGE_VERSION }} --build ${{ needs.setup.outputs.BUILD_NUMBER }}
+
+    - name: Upload Build Artifact
+      uses: actions/upload-artifact@v4.4.0
+      with:
+        name: dist-${{ matrix.host }}
+        path: dist
+        if-no-files-found: error
+
+  make-release:
+    name: Make Release
+    needs: [ build, setup ]
+    runs-on: ubuntu-latest
+    steps:
+    - name: Get Build Artifacts
+      uses: actions/download-artifact@v4.1.8
+      with:
+        path: dist
+        merge-multiple: true
+
+    - name: Create Release
+      uses: ncipollo/release-action@v1.14.0
+      with:
+        name: ${{ needs.setup.outputs.PACKAGE_NAME }} v${{ needs.setup.outputs.PACKAGE_VERSION }} (build ${{ needs.setup.outputs.BUILD_NUMBER }})
+        draft: true
+        body: |
+          Build ${{ needs.setup.outputs.BUILD_NUMBER }} of ${{ needs.setup.outputs.PACKAGE_NAME }} v${{ needs.setup.outputs.PACKAGE_VERSION }}.
+        artifacts: "dist/*"

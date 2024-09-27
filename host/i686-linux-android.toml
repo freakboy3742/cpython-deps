@@ -1,0 +1,23 @@
+# When moving to a new version of the NDK, carefully review the
+# following:
+#
+# * https://developer.android.com/ndk/downloads/revision_history
+#
+# * https://android.googlesource.com/platform/ndk/+/ndk-rXX-release/docs/BuildSystemMaintainers.md
+#   where XX is the NDK version. Do a diff against the version
+#   you're upgrading from, e.g.:
+#   https://android.googlesource.com/platform/ndk/+/ndk-r25-release..ndk-r26-release/docs/BuildSystemMaintainers.md
+api_level = "21"
+ndk_version = "26.2.11394342"
+
+AR = "llvm-ar"
+AS = "llvm-as"
+CC = "i686-linux-android{api_level}-clang"
+CXX = "i686-linux-android{api_level}-clang++"
+LD = "ld"
+NM = "llvm-nm"
+RANLIB = "llvm-ranlib"
+READELF = "llvm-readelf"
+STRIP = "llvm-strip"
+
+LDFLAGS = "-Wl,--build-id=sha1 -Wl,--no-rosegment -lm"

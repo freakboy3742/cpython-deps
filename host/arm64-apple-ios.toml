@@ -1,0 +1,7 @@
+CC = "arm64-apple-ios-clang"
+CXX = "arm64-apple-ios-clang++"
+CPP = "arm64-apple-ios-cpp"
+AR = "arm64-apple-ios-ar"
+
+CFLAGS = "-mios-version-min=13.0 --sysroot=\"{SDK_ROOT}\""
+LDFLAGS = "-isysroot \"{SDK_ROOT}\""

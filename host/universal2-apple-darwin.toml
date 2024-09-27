@@ -1,0 +1,7 @@
+CC = "universal2-apple-darwin-clang"
+CXX = "universal2-apple-darwin-clang++"
+CPP = "universal2-apple-darwin-cpp"
+AR = "universal2-apple-darwin-ar"
+
+CFLAGS = "-mmacosx-version-min=11.0 --sysroot=\"{SDK_ROOT}\""
+LDFLAGS = "-isysroot \"{SDK_ROOT}\""

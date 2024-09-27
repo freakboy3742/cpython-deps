@@ -1,0 +1,5 @@
+version = "1.0.8"
+download_url = "https://sourceware.org/pub/bzip2/bzip2-{version}.tar.gz"
+
+[env]
+CFLAGS = "-O2 -fPIC"
