@@ -120,7 +120,10 @@ jobs:
         # Check if a build artefact has been generated; if it has, set an environment marker.
         # This allows a library to *pass* build-dep, but *not* generate a tarball.
         if [ -f "dist/${{ needs.setup.outputs.PACKAGE_NAME }}-${{ needs.setup.outputs.PACKAGE_VERSION }}-${{ needs.setup.outputs.BUILD_NUMBER }}-${{ matrix.host }}.tar.gz" ]; then
+          echo "Build artefacts have been created."
           echo "has_artefacts=true" | tee -a ${GITHUB_OUTPUT}
+        else
+          echo "No build artefacts detected."
         fi
 
     - name: Upload Build Artifact

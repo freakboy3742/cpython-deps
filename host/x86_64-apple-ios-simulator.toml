@@ -3,5 +3,5 @@ CXX = "x86_64-apple-ios-simulator-clang++"
 CPP = "x86_64-apple-ios-simulator-cpp"
 AR = "x86_64-apple-ios-simulator-ar"
 
-CFLAGS = "-mios-version-min=13.0 --sysroot=\"{SDK_ROOT}\""
-LDFLAGS = "-isysroot \"{SDK_ROOT}\""
+CFLAGS = "-mios-version-min=13.0 --sysroot={SDK_ROOT}"
+LDFLAGS = "-isysroot {SDK_ROOT}"

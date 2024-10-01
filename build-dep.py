@@ -36,7 +36,7 @@ def download(url, download_path: Path):
                 "--progress-bar",
                 "-o",
                 archive_path,
-                url
+                url,
             ]
         )
 
@@ -75,7 +75,7 @@ def build(host, libname, version, build):
     with config_filename.open("rb") as f:
         config = tomllib.load(f)
 
-    if host and host not in config['env']:
+    if host and host not in config["env"]:
         print(f"No build of {libname} required for {host}.")
         return
 
@@ -107,6 +107,21 @@ def build(host, libname, version, build):
         print(f"Unpacking {BUILD_PATH.name} into {BUILD_PATH.parent}")
         shutil.unpack_archive(archive_path, BUILD_PATH.parent, filter="data")
 
+        for patch in config.get("patches", []):
+            print(f"Applying {patch}")
+            subprocess.run(
+                [
+                    "patch",
+                    "--strip=1",
+                    "--force",
+                    "--input",
+                    ROOT_PATH / libname / patch,
+                    "--directory",
+                    BUILD_PATH,
+                ],
+                check=True,
+            )
+
         # Add the platform's environment values
         host_filename = ROOT_PATH / "host" / f"{host}.toml"
         with host_filename.open("rb") as f:
@@ -123,25 +138,28 @@ def build(host, libname, version, build):
                 return
 
             # Ensure that the NDK is installed
-            ndk_version = host_config['ndk_version']
+            ndk_version = host_config["ndk_version"]
             print()
             print(f"Ensure NDK {ndk_version} is installed...")
             subprocess.run(
-                [android_home / "cmdline-tools/latest/bin/sdkmanager", f"ndk;{ndk_version}"],
-                check=True
+                [
+                    android_home / "cmdline-tools/latest/bin/sdkmanager",
+                    f"ndk;{ndk_version}",
+                ],
+                check=True,
             )
 
             # The exact name of the NDK toolchain is platform specific; assume
             # there's only one folder, and select that one.
             ndk_tools_path = ndk_tools_path = [
                 p
-                for p in (android_home / "ndk" / ndk_version / "toolchains/llvm/prebuilt").glob("*")
+                for p in (
+                    android_home / "ndk" / ndk_version / "toolchains/llvm/prebuilt"
+                ).glob("*")
                 if p.is_dir()
             ][0]
 
-            env = {
-                "ANDROID_HOME": str(android_home)
-            }
+            env = {"ANDROID_HOME": str(android_home)}
             tools_path = ndk_tools_path / "bin"
         elif "-ios" in host:
             # iOS uses the compiler shims in the `bin` directory
@@ -150,7 +168,9 @@ def build(host, libname, version, build):
             else:
                 sdk = "iphoneos"
 
-            sdk_root = subprocess.check_output(["xcrun", "--sdk", sdk, "--show-sdk-path"], text=True).strip()
+            sdk_root = subprocess.check_output(
+                ["xcrun", "--sdk", sdk, "--show-sdk-path"], text=True
+            ).strip()
             env = {
                 "SDK_ROOT": sdk_root,
             }
@@ -158,7 +178,9 @@ def build(host, libname, version, build):
 
         elif "-darwin" in host:
             # macOS uses the compiler shims in the `bin` directory
-            sdk_root = subprocess.check_output(["xcrun", "--sdk", "macosx", "--show-sdk-path"], text=True).strip()
+            sdk_root = subprocess.check_output(
+                ["xcrun", "--sdk", "macosx", "--show-sdk-path"], text=True
+            ).strip()
             env = {
                 "SDK_ROOT": sdk_root,
             }
@@ -185,6 +207,7 @@ def build(host, libname, version, build):
         )
         env["PREFIX"] = str(INSTALL_PATH)
         env["CPU_COUNT"] = str(multiprocessing.cpu_count())
+        env["HOST"] = host
 
         print()
         print("Build environment:")
@@ -250,9 +273,18 @@ if __name__ == "__main__":
         "universal2-apple-darwin",
     ]
 
-    parser = argparse.ArgumentParser(prog="build-dep", description="Build binary dependencies used by CPython.",)
+    parser = argparse.ArgumentParser(
+        prog="build-dep",
+        description="Build binary dependencies used by CPython.",
+    )
     parser.add_argument("--build", default="0")
-    parser.add_argument("--host", choices=android_hosts + ios_hosts + macos_hosts + ["android", "iOS", "macOS", "all"])
+    parser.add_argument(
+        "--host",
+        choices=android_hosts
+        + ios_hosts
+        + macos_hosts
+        + ["android", "iOS", "macOS", "all"],
+    )
     parser.add_argument("--version")
     parser.add_argument("libname")
 

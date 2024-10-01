@@ -1,0 +1,17 @@
+version = "5.6.2"
+download_url = "https://tukaani.org/xz/xz-{version}.tar.gz"
+patches = [
+    "ios-config.patch",
+]
+
+# The existence of a table header enables a build on that platform.
+[env.arm-linux-androideabi]
+[env.aarch64-linux-android]
+[env.i686-linux-android]
+[env.x86_64-linux-android]
+
+[env.arm64-apple-ios]
+[env.arm64-apple-ios-simulator]
+[env.x86_64-apple-ios-simulator]
+
+[env.universal2-apple-darwin]
