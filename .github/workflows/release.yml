@@ -114,8 +114,18 @@ jobs:
         # Do the build for the requested host.
         python -m build-dep --host ${{ matrix.host }} ${{ needs.setup.outputs.PACKAGE_NAME }} --version ${{ needs.setup.outputs.PACKAGE_VERSION }} --build ${{ needs.setup.outputs.BUILD_NUMBER }}
 
+    - name: Check for build artefacts
+      id: has-artefacts
+      run: |
+        # Check if a build artefact has been generated; if it has, set an environment marker.
+        # This allows a library to *pass* build-dep, but *not* generate a tarball.
+        if [ -f "dist/${{ needs.setup.outputs.PACKAGE_NAME }}-${{ needs.setup.outputs.PACKAGE_VERSION }}-${{ needs.setup.outputs.BUILD_NUMBER }}-${{ matrix.host }}.tar.gz" ]; then
+          echo "has_artefacts=true" | tee -a ${GITHUB_OUTPUT}
+        fi
+
     - name: Upload Build Artifact
       uses: actions/upload-artifact@v4.4.0
+      if: steps.has-artefacts.outputs.has_artefacts
       with:
         name: dist-${{ matrix.host }}
         path: dist

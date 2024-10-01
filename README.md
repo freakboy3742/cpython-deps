@@ -3,12 +3,14 @@
 A meta-package for building the binary packages that are required to compile
 CPython on Android, iOS and macOS. This includes:
 
-* BZip2
+* BZip2 (Android only)
 * XZ
-* libFFI
+* libFFI (iOS and Android only)
 * mpdecimal
-* OpenSSL 1.1
-* OpenSSL 3.0
+* OpenSSL
+* Tcl/Tk (macOS only)
+* ncurses (macOS only)
+* SQLite (macOS only)
 
 The repository works by downloading, patching, and building binaries for each
 SDK target and architecture that is requried. The compiled library is packed

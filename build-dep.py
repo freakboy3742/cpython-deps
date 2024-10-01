@@ -75,6 +75,10 @@ def build(host, libname, version, build):
     with config_filename.open("rb") as f:
         config = tomllib.load(f)
 
+    if host and host not in config['env']:
+        print(f"No build of {libname} required for {host}.")
+        return
+
     if version is None:
         version = config["version"]
 

@@ -3,3 +3,9 @@ download_url = "https://sourceware.org/pub/bzip2/bzip2-{version}.tar.gz"
 
 [env]
 CFLAGS = "-O2 -fPIC"
+
+# The existence of a table header enables a build on that platform.
+[env.arm-linux-androideabi]
+[env.aarch64-linux-android]
+[env.i686-linux-android]
+[env.x86_64-linux-android]
